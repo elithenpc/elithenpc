@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Captcha Leaderboard</title>
+<title>Captcha Run+</title>
 
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
@@ -13,28 +13,25 @@
 body{
     margin:0;
     min-height:100vh;
-    background:#0f1117;
-    font-family:Arial,sans-serif;
+    background:#0b0d12;
+    font-family:Arial;
     color:white;
     display:flex;
     justify-content:center;
     align-items:center;
-    padding:30px;
 }
 
 .container{
-    width:420px;
-    background:#1a1d26;
-    border:2px solid #2e3445;
+    width:440px;
+    background:#151925;
     border-radius:18px;
-    padding:30px;
-    box-shadow:0 0 25px rgba(0,0,0,0.45);
+    padding:25px;
+    border:1px solid #2a3142;
 }
 
 h1{
-    margin-top:0;
     text-align:center;
-    font-size:32px;
+    margin-top:0;
 }
 
 button{
@@ -45,65 +42,67 @@ button{
     background:#5865f2;
     color:white;
     font-size:16px;
+    margin-top:12px;
     cursor:pointer;
-    transition:0.2s;
-    margin-top:15px;
 }
 
 button:hover{
-    transform:scale(1.02);
-    background:#6d78ff;
+    background:#6f7bff;
+}
+
+#timer{
+    font-size:34px;
+    text-align:center;
+    margin:10px 0;
+    font-weight:bold;
 }
 
 #result{
     text-align:center;
-    font-size:20px;
-    margin-top:18px;
-    min-height:30px;
+    min-height:25px;
 }
 
-#timer{
-    text-align:center;
-    font-size:28px;
-    margin-top:15px;
-    font-weight:bold;
-}
-
-input{
-    width:100%;
-    padding:12px;
-    border-radius:10px;
-    border:none;
-    outline:none;
-    margin-top:15px;
-    background:#2a3040;
-    color:white;
-    box-sizing:border-box;
-    font-size:16px;
-}
-
-#leaderboard{
-    margin-top:25px;
-}
-
-.score{
-    background:#252b38;
-    padding:10px;
-    border-radius:10px;
-    margin-top:10px;
+.panel{
     display:flex;
     justify-content:space-between;
+    margin-top:10px;
+    font-size:14px;
+    color:#b5bfd6;
+}
+
+.best{
+    color:#00ff9d;
+}
+
+.badge{
+    padding:4px 8px;
+    background:#222838;
+    border-radius:8px;
 }
 
 .g-recaptcha{
     display:none;
     justify-content:center;
-    margin-top:20px;
+    margin-top:15px;
 }
 
-.top{
-    color:#ffd700;
-    font-weight:bold;
+input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
+    border:none;
+    background:#222838;
+    color:white;
+}
+
+.score{
+    display:flex;
+    justify-content:space-between;
+    padding:8px;
+    margin-top:6px;
+    background:#1c2230;
+    border-radius:10px;
 }
 
 </style>
@@ -113,46 +112,33 @@ input{
 
 <div class="container">
 
-<h1>Captcha Run</h1>
+<h1>Captcha Run+</h1>
 
-<div id="timer">
-0.00s
+<div id="timer">0.00s</div>
+
+<div class="panel">
+<div>Attempts: <span id="attempts">0</span></div>
+<div>Best: <span id="best">--</span></div>
 </div>
 
-<button id="goButton" onclick="startRun()">
-GO
-</button>
+<button id="goBtn" onclick="startRun()">GO</button>
 
-<div
-id="captchaBox"
-class="g-recaptcha"
+<div id="captchaBox" class="g-recaptcha"
 data-sitekey="6LcIyfQsAAAAAFhb6QSxRHfGwinojWKRvWl6ds-g">
 </div>
 
-<button
-id="checkButton"
-onclick="checkCaptcha()"
-style="display:none;">
+<button id="checkBtn" onclick="checkCaptcha()" style="display:none;">
 Check
 </button>
 
 <div id="result"></div>
 
 <div id="nameBox" style="display:none;">
-
-<input
-id="playerName"
-maxlength="20"
-placeholder="Enter your name">
-
-<button onclick="submitScore()">
-Save Score
-</button>
-
+<input id="playerName" placeholder="Name">
+<button onclick="submitScore()">Save Score</button>
 </div>
 
-<h2>Top 10</h2>
-
+<h3>Top 10</h3>
 <div id="leaderboard"></div>
 
 </div>
@@ -163,41 +149,48 @@ const WORKER_URL =
 "https://elithenpc.elithenpc.workers.dev/";
 
 let startTime = 0;
+let timer = null;
 let finalTime = 0;
-let timerInterval = null;
+
+let attempts = 0;
+let bestTime = null;
 
 function startRun(){
 
-    document
-    .getElementById("goButton")
-    .style.display = "none";
+    document.getElementById("goBtn").style.display="none";
+    document.getElementById("captchaBox").style.display="flex";
+    document.getElementById("checkBtn").style.display="block";
 
-    document
-    .getElementById("captchaBox")
-    .style.display = "flex";
+    document.getElementById("result").innerText="";
 
-    document
-    .getElementById("checkButton")
-    .style.display = "block";
+    let countdown = 3;
 
-    document
-    .getElementById("result")
-    .innerText = "";
+    document.getElementById("timer").innerText="3";
+
+    let cd = setInterval(()=>{
+
+        countdown--;
+
+        if(countdown<=0){
+            clearInterval(cd);
+            startTimer();
+        }else{
+            document.getElementById("timer").innerText=countdown;
+        }
+
+    },1000);
+}
+
+function startTimer(){
 
     startTime = Date.now();
 
-    clearInterval(timerInterval);
+    clearInterval(timer);
 
-    timerInterval = setInterval(()=>{
+    timer = setInterval(()=>{
 
-        const current =
-        ((Date.now()-startTime)/1000)
-        .toFixed(2);
-
-        document
-        .getElementById("timer")
-        .innerText =
-        current + "s";
+        document.getElementById("timer").innerText=
+        ((Date.now()-startTime)/1000).toFixed(2)+"s";
 
     },10);
 }
@@ -206,208 +199,116 @@ async function checkCaptcha(){
 
     const token = grecaptcha.getResponse();
 
-    const result =
-    document.getElementById("result");
+    const result = document.getElementById("result");
 
     if(!token){
-
-        result.innerText =
-        "Complete the captcha first.";
-
+        result.innerText="Complete captcha first";
         return;
     }
 
-    try{
+    const res = await fetch(WORKER_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({token})
+    });
 
-        const res = await fetch(
-            WORKER_URL,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({ token })
-            }
-        );
+    const data = await res.json();
 
-        const data = await res.json();
+    attempts++;
+    document.getElementById("attempts").innerText=attempts;
 
-        if(data.success){
+    if(data.success){
 
-            clearInterval(timerInterval);
+        clearInterval(timer);
 
-            finalTime =
-            ((Date.now()-startTime)/1000)
-            .toFixed(2);
+        finalTime=((Date.now()-startTime)/1000).toFixed(2);
 
-            document
-            .getElementById("timer")
-            .innerText =
-            finalTime + "s";
+        document.getElementById("timer").innerText=finalTime+"s";
 
-            result.innerHTML =
-            `Passed ✔`;
+        result.innerText="Passed ✔";
 
-            const button =
-            document.getElementById("checkButton");
-
-            button.innerText = "Restart";
-            button.onclick = restartRun;
-
-            const scores = await getScores();
-
-            if(
-                scores.length < 10 ||
-                Number(finalTime) <
-                Number(scores[scores.length-1].time)
-            ){
-
-                document
-                .getElementById("nameBox")
-                .style.display = "block";
-            }
-
-        }else{
-
-            result.innerText =
-            "Failed ❌";
-
-            grecaptcha.reset();
+        if(!bestTime || finalTime<bestTime){
+            bestTime=finalTime;
+            document.getElementById("best").innerText=bestTime+"s";
         }
 
-    }catch(err){
+        document.getElementById("checkBtn").innerText="Restart";
+        document.getElementById("checkBtn").onclick=restartRun;
 
-        result.innerText =
-        "Server error.";
+        const scores = await getScores();
+
+        if(scores.length<10 || Number(finalTime)<Number(scores[scores.length-1].time)){
+            document.getElementById("nameBox").style.display="block";
+        }
+
+    }else{
+        result.innerText="Failed ❌";
+        grecaptcha.reset();
     }
 }
-    function restartRun(){
+
+function restartRun(){
 
     grecaptcha.reset();
 
-    clearInterval(timerInterval);
+    clearInterval(timer);
 
-    startTime = Date.now();
+    document.getElementById("timer").innerText="0.00s";
 
-    finalTime = 0;
+    document.getElementById("result").innerText="";
 
-    document
-    .getElementById("timer")
-    .innerText = "0.00s";
+    document.getElementById("nameBox").style.display="none";
 
-    document
-    .getElementById("result")
-    .innerText = "";
+    document.getElementById("playerName").value="";
 
-    document
-    .getElementById("nameBox")
-    .style.display = "none";
+    document.getElementById("checkBtn").innerText="Check";
+    document.getElementById("checkBtn").onclick=checkCaptcha;
 
-    document
-    .getElementById("playerName")
-    .value = "";
-
-    const button =
-    document.getElementById("checkButton");
-
-    button.innerText = "Check";
-    button.onclick = checkCaptcha;
-
-    timerInterval = setInterval(()=>{
-
-        const current =
-        ((Date.now()-startTime)/1000)
-        .toFixed(2);
-
-        document
-        .getElementById("timer")
-        .innerText =
-        current + "s";
-
-    },10);
+    document.getElementById("goBtn").style.display="block";
+    document.getElementById("captchaBox").style.display="none";
+    document.getElementById("checkBtn").style.display="none";
 }
+
 async function submitScore(){
 
-    const name =
-    document
-    .getElementById("playerName")
-    .value
-    .trim();
+    const name=document.getElementById("playerName").value.trim();
+    if(!name)return;
 
-    if(!name) return;
+    await fetch(WORKER_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name,time:Number(finalTime)})
+    });
 
-    await fetch(
-        WORKER_URL,
-        {
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                name,
-                time:Number(finalTime)
-            })
-        }
-    );
-
-    document
-    .getElementById("nameBox")
-    .style.display = "none";
-
-    document
-    .getElementById("playerName")
-    .value = "";
-
-    document
-    .getElementById("captchaBox")
-    .style.display = "none";
-
-    document
-    .getElementById("checkButton")
-    .style.display = "none";
-
-    document
-    .getElementById("goButton")
-    .style.display = "block";
+    document.getElementById("nameBox").style.display="none";
 
     loadLeaderboard();
+
+    restartRun();
 }
 
 async function getScores(){
-
-    const res =
-    await fetch(WORKER_URL);
-
+    const res=await fetch(WORKER_URL);
     return await res.json();
 }
 
 async function loadLeaderboard(){
 
-    const scores =
-    await getScores();
+    const scores=await getScores();
 
-    const board =
-    document.getElementById("leaderboard");
+    const board=document.getElementById("leaderboard");
+    board.innerHTML="";
 
-    board.innerHTML = "";
+    scores.forEach((s,i)=>{
 
-    scores.forEach((score,index)=>{
+        const div=document.createElement("div");
+        div.className="score";
 
-        const div =
-        document.createElement("div");
-
-        div.className = "score";
-
-        if(index === 0){
-            div.classList.add("top");
-        }
-
-        div.innerHTML =
-        `<span>#${index+1} ${score.name}</span>
-        <span>${score.time}s</span>`;
+        div.innerHTML=
+        `<span>#${i+1} ${s.name}</span>
+         <span>${s.time}s</span>`;
 
         board.appendChild(div);
-
     });
 }
 
