@@ -248,6 +248,12 @@ async function checkCaptcha(){
             result.innerHTML =
             `Passed ✔`;
 
+            const button =
+            document.getElementById("checkButton");
+
+            button.innerText = "Restart";
+            button.onclick = restartRun;
+
             const scores = await getScores();
 
             if(
@@ -265,6 +271,8 @@ async function checkCaptcha(){
 
             result.innerText =
             "Failed ❌";
+
+            grecaptcha.reset();
         }
 
     }catch(err){
@@ -272,10 +280,52 @@ async function checkCaptcha(){
         result.innerText =
         "Server error.";
     }
+}
+    function restartRun(){
 
     grecaptcha.reset();
-}
 
+    clearInterval(timerInterval);
+
+    startTime = Date.now();
+
+    finalTime = 0;
+
+    document
+    .getElementById("timer")
+    .innerText = "0.00s";
+
+    document
+    .getElementById("result")
+    .innerText = "";
+
+    document
+    .getElementById("nameBox")
+    .style.display = "none";
+
+    document
+    .getElementById("playerName")
+    .value = "";
+
+    const button =
+    document.getElementById("checkButton");
+
+    button.innerText = "Check";
+    button.onclick = checkCaptcha;
+
+    timerInterval = setInterval(()=>{
+
+        const current =
+        ((Date.now()-startTime)/1000)
+        .toFixed(2);
+
+        document
+        .getElementById("timer")
+        .innerText =
+        current + "s";
+
+    },10);
+}
 async function submitScore(){
 
     const name =
